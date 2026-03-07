@@ -1,14 +1,18 @@
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:3000", {
+const SOCKET_URL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "http://localhost:3000";
+
+export const socket = io(SOCKET_URL, {
   path: "/socket.io",
   autoConnect: false,
-  transports: ["websocket"],  // force WebSocket only (skip polling)
+  transports: ["websocket"],
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 1000,
-  pingTimeout: 60000,  // longer timeout to avoid early close
-  pingInterval: 25000,
+  timeout: 60000,
 });
 
 socket.on("connect", () => {
@@ -16,13 +20,9 @@ socket.on("connect", () => {
 });
 
 socket.on("connect_error", (err) => {
-  console.log("[Socket Client] Connect error:", err.message, err.description);
+  console.log("[Socket Client] Connect error:", err.message, (err as any).description);
 });
 
 socket.on("disconnect", (reason) => {
   console.log("[Socket Client] Disconnected:", reason);
-});
-
-socket.on("test", (msg) => {
-  console.log("[Socket Client] Test from server:", msg);
 });
