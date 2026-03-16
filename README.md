@@ -1,33 +1,21 @@
 # Realtime-Collab
 
-A real-time collaborative whiteboard and code editor built with Next.js, Socket.io, tldraw, and shadcn-ui.
+A full-stack **real-time collaborative** app: shared whiteboard (tldraw), code editor (Monaco + execution), and chat — all synced live via Socket.IO. Host controls join requests, kicks, per-tool locks, and auto host migration.
 
 ## Features
-- Username + create/join room with unique code
-- Real-time multi-user presence (join notifications + status)
-- Infinite collaborative whiteboard (tldraw)
-- Local drawing support (real-time sync coming soon)
-- Modern UI with shadcn-ui + Tailwind
+- Create/join rooms with unique 6-char codes
+- Username-based presence (avatars in header)
+- **Whiteboard**: tldraw canvas, real-time drawing sync, host lock (readonly for others)
+- **Code Editor**: Monaco, real-time changes (debounced), run code via Judge0 (JS/TS/Python/C++/Java/Go), HTML live preview in iframe
+- **Chat**: Real-time messages + system join/leave notices, host can mute others
+- Host panel: approve/deny joins, kick users, toggle locks (whiteboard/code/chat)
+- Connection status + copy room link
+- Tabbed UI (Whiteboard / Code / Chat)
 
 ## Tech Stack
-- Next.js 14 (App Router)
-- Socket.io (real-time communication)
-- tldraw (whiteboard canvas)
-- shadcn-ui + Tailwind CSS (components & styling)
-- Custom server for Socket.io
-
-## How to run locally
-1. Clone the repo
-2. `npm install`
-3. `npm run dev`
-4. Open http://localhost:3000
-
-Create a room, share the code, join from another tab — enjoy real-time collab!
-
-## Future Improvements
-- Real-time drawing sync
-- Monaco code editor integration
-- Chat panel
-- User cursors on canvas
-
-Built by Arun — feel free to fork & contribute!
+- Next.js 16 + React 19
+- Socket.IO ^4 (custom server)
+- tldraw ^4 (whiteboard)
+- @monaco-editor/react ^4 (code editor)
+- Tailwind CSS + shadcn/ui + Radix UI
+- Judge0 CE (code execution – public API for now)
