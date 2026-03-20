@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { socket } from "@/lib/socket";
+import "@excalidraw/excalidraw/index.css";
 
 // Excalidraw is client-only; we dynamic-import it inside the component
 let ExcalidrawComponent: any = null;
