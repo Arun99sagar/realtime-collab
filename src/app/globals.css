@@ -1,15 +1,1 @@
 @import "tailwindcss";
-
-/* ── tldraw overrides ─────────────────────────────────────────── */
-
-/* Remove the "Get a license for production" banner */
-.tl-watermark_SEE-LICENSE {
-  display: none !important;
-}
-
-/* Ensure tldraw canvas always renders on white background
-   regardless of the app's dark-mode CSS variables */
-.tl-container {
-  --tl-background: #ffffff;
-  color-scheme: light;
-}

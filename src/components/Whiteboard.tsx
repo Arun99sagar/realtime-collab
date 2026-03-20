@@ -1,91 +1,102 @@
 "use client";
 
-import { Tldraw, Editor } from "tldraw";
-import "tldraw/tldraw.css";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { socket } from "@/lib/socket";
 
+// Excalidraw is client-only; we dynamic-import it inside the component
+let ExcalidrawComponent: any = null;
+
 export default function Whiteboard({ roomId, locked = false }: { roomId: string; locked?: boolean }) {
-  const editorRef = useRef<Editor | null>(null);
+  const [Excalidraw, setExcalidraw] = useState<any>(null);
+  const excalidrawAPIRef = useRef<any>(null);
   const isRemoteUpdate = useRef(false);
+  const lastElementsRef = useRef<string>("");
 
-  const handleMount = useCallback(
-    (editor: Editor) => {
-      editorRef.current = editor;
+  // Dynamic import of Excalidraw (SSR-safe)
+  useEffect(() => {
+    if (ExcalidrawComponent) {
+      setExcalidraw(() => ExcalidrawComponent);
+      return;
+    }
+    import("@excalidraw/excalidraw").then((mod) => {
+      ExcalidrawComponent = mod.Excalidraw;
+      setExcalidraw(() => mod.Excalidraw);
+    });
+  }, []);
 
-      editor.store.listen(
-        (entry) => {
-          if (isRemoteUpdate.current) return;
-          const { changes, source } = entry;
-          if (source !== "user") return;
+  // Handle local changes → emit to Socket.IO
+  const handleChange = useCallback(
+    (elements: readonly any[], appState: any) => {
+      if (isRemoteUpdate.current) return;
 
-          const hasChanges =
-            Object.keys(changes.added).length > 0 ||
-            Object.keys(changes.updated).length > 0 ||
-            Object.keys(changes.removed).length > 0;
-
-          if (hasChanges) {
-            socket.emit("drawing-update", { roomId, changes });
-          }
-        },
-        { source: "user", scope: "document" }
+      // Serialize only the elements (not appState) to detect real changes
+      const serialized = JSON.stringify(
+        elements.map((el) => ({ ...el, version: el.version }))
       );
+      if (serialized === lastElementsRef.current) return;
+      lastElementsRef.current = serialized;
+
+      socket.emit("drawing-update", {
+        roomId,
+        changes: { elements: elements.map((el) => ({ ...el })) },
+      });
     },
     [roomId]
   );
 
-  // Apply/remove readonly when locked changes
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    editor.updateInstanceState({ isReadonly: locked });
-    if (locked) {
-      editor.setCurrentTool("hand");
-    } else {
-      editor.setCurrentTool("draw");
-    }
-  }, [locked]);
-
+  // Listen for remote drawing updates
   useEffect(() => {
     const handleRemoteDrawing = (changes: any) => {
-      const editor = editorRef.current;
-      if (!editor) return;
+      const api = excalidrawAPIRef.current;
+      if (!api || !changes?.elements) return;
 
       isRemoteUpdate.current = true;
       try {
-        editor.store.mergeRemoteChanges(() => {
-          const { added, updated, removed } = changes;
-
-          if (added && Object.keys(added).length > 0) {
-            editor.store.put(Object.values(added));
-          }
-          if (updated && Object.keys(updated).length > 0) {
-            const updatedRecords = Object.values(updated).map((pair: any) => pair[1]);
-            editor.store.put(updatedRecords);
-          }
-          if (removed && Object.keys(removed).length > 0) {
-            const removedIds = Object.keys(removed);
-            const existingIds = removedIds.filter((id) => editor.store.has(id as any));
-            if (existingIds.length > 0) {
-              editor.store.remove(existingIds as any);
-            }
-          }
-        });
+        api.updateScene({ elements: changes.elements });
+        lastElementsRef.current = JSON.stringify(
+          changes.elements.map((el: any) => ({ ...el, version: el.version }))
+        );
       } finally {
-        isRemoteUpdate.current = false;
+        // Small delay to prevent the onChange from re-emitting the remote update
+        setTimeout(() => {
+          isRemoteUpdate.current = false;
+        }, 50);
       }
     };
 
     socket.on("drawing-update", handleRemoteDrawing);
-    return () => { socket.off("drawing-update", handleRemoteDrawing); };
+    return () => {
+      socket.off("drawing-update", handleRemoteDrawing);
+    };
   }, []);
+
+  if (!Excalidraw) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500">Loading Whiteboard...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full overflow-hidden bg-white">
-      <style>{`.tl-watermark { display: none !important; }`}</style>
-      <Tldraw
-        persistenceKey={`room-${roomId}`}
-        onMount={handleMount}
+      <Excalidraw
+        excalidrawAPI={(api: any) => {
+          excalidrawAPIRef.current = api;
+        }}
+        onChange={handleChange}
+        viewModeEnabled={locked}
+        theme="light"
+        UIOptions={{
+          canvasActions: {
+            loadScene: false,
+            export: false,
+            saveAsImage: false,
+          },
+        }}
       />
     </div>
   );
