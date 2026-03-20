@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  transpilePackages: ["tldraw", "@tldraw/tldraw"],
 };
 
 export default nextConfig;

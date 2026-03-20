@@ -46,6 +46,8 @@ export default function CodeEditor({
   const [language, setLanguage] = useState("javascript");
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState<RunOutput | null>(null);
+  const [stdin, setStdin] = useState("");
+  const [stdinOpen, setStdinOpen] = useState(false);
   const [outputOpen, setOutputOpen] = useState(false);
   // HTML preview state
   const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false);
@@ -104,6 +106,7 @@ export default function CodeEditor({
         body: JSON.stringify({
           language_id: currentLang.judgeId,
           source_code: code,
+          stdin: stdin || "",
         }),
       });
       if (!submitRes.ok) throw new Error(`API error ${submitRes.status}`);
@@ -226,6 +229,14 @@ export default function CodeEditor({
             )}
           </button>
 
+          {canRun && !isHtml && (
+            <button
+              onClick={() => setStdinOpen((o) => !o)}
+              className="text-xs text-gray-400 hover:text-gray-200 transition-colors underline"
+            >
+              {stdinOpen ? "Hide Stdin" : "Stdin"}
+            </button>
+          )}
           {hasOutput && !isHtml && (
             <button
               onClick={() => setOutputOpen((o) => !o)}
@@ -272,6 +283,28 @@ export default function CodeEditor({
           }}
         />
       </div>
+
+      {/* Stdin panel */}
+      {stdinOpen && canRun && !isHtml && (
+        <div className="flex-shrink-0 border-t border-[#3c3c3c] bg-[#0d0d0d] flex flex-col">
+          <div className="flex items-center justify-between px-4 py-1.5 bg-[#1a1a1a] border-b border-[#3c3c3c]">
+            <span className="text-xs font-semibold text-blue-400">Stdin (Program Input)</span>
+            <button
+              onClick={() => setStdin("")}
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+          <textarea
+            value={stdin}
+            onChange={(e) => setStdin(e.target.value)}
+            placeholder="Enter input values here (one per line)..."
+            rows={3}
+            className="w-full bg-[#0d0d0d] text-green-300 font-mono text-xs px-4 py-2 resize-none focus:outline-none placeholder-gray-600"
+          />
+        </div>
+      )}
 
       {/* HTML Preview panel */}
       {htmlPreviewOpen && (
