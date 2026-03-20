@@ -1,6 +1,6 @@
 # Realtime-Collab
 
-A full-stack **real-time collaborative** app: shared whiteboard (tldraw), code editor (Monaco + execution), and chat — all synced live via Socket.IO. Host controls join requests, kicks, per-tool locks, and auto host migration.
+A full-stack **real-time collaborative** app: shared whiteboard Excalidraw (MIT-licensed, free for production), code editor (Monaco + execution), and chat — all synced live via Socket.IO. Host controls join requests, kicks, per-tool locks, and auto host migration.
 
 ## Features
 - Create/join rooms with unique 6-char codes
